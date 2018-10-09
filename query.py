@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 import os
 import sqlite3
-conn = sqlite3.connect('proyecto.db')
+conn = sqlite3.connect('proyect.db')
 c = conn.cursor()
 
 cant_solitar = 0
 
+
 class InsertarArticulos:
+    
     def __init__(self):
         self.articuloID = ""
         self.Nombre = ""
@@ -55,7 +57,7 @@ class InsertarArticulos:
         ubicacionID = input('Ingrese el ID de la ubicación')
         ##############################
 
-        c.execute("INSERT INTO Articulos(Nombre, Familia, Costo, Cantidad, Maximo, Minimo, UbicacionID) values ('" + Nombre + "' , '" + Familia + "'  , '" + costo + "' , '" + cantidad + "'  , ? , ?, '" + ubicacionID +"')", (max, min))
+        c.execute("INSERT INTO Articulos(UbicacionID, FamiliaID, Nombre, Costo, Cantidad, Maximo, Minimo) values (?, ?, '" + Nombre + "' , '" + costo + "' , '" + cantidad + "'  , ? , ?)", (ubicacionID, Familia, max, min))
         conn.commit()
         #print (list(c.execute("SELECT * FROM Articulos")))
         input()
@@ -64,17 +66,16 @@ class InsertarArticulos:
         x = True
         y = True
         while(x == True):
-            os.system("cls")
             artID = input("Ingrese el ID a eliminar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opción: ")
             if artID == '?':
                 print("Tabla Artículos")
-                for row in c.execute('SELECT * FROM Articulos'):
+                for row in c.execute('SELECT * FROM Articulos WHERE Estado = 0'):
                     print (row)
 
             c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' ")
             for row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' "):
                 if row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' "):
-                    c.execute("DELETE FROM Articulos where ArticuloID = '" + artID +"'")
+                    c.execute("UPDATE Articulos SET Estado = 1 WHERE ArticuloID = '" + artID +"'")
                     x = False
                 input()
         conn.commit()
@@ -82,19 +83,25 @@ class InsertarArticulos:
     def actualizarRegistro(self):
         x = True
         while(x == True):
-            os.system("cls")
             artID = input("Ingrese el ID a actualizar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opción: ")
             if artID == '?':
                 print("Tabla Artículos")
-                print("ID del Artículo | Nombre | Familia | Costo | Cantidad | Máximo | Mínimo | Ubicación")
-                for row in c.execute('SELECT * FROM Articulos'):
-                    print (row)
+                print("ID del Artículo | Nombre | Marca | Modelo | Costo | Cantidad | Máximo | Mínimo | Ubicación")
+                for row in c.execute("""SELECT a.ArticuloID, a.Nombre, fa.Marca, fa.Modelo, a.Costo, a.Cantidad, a.Maximo, a.Minimo, alm.NombreAlmacen
+                    FROM Articulos a
+                    INNER JOIN FamiliadeArticulos fa
+                        on fa.FamiliaID = a.FamiliaID
+                    INNER JOIN Almacenes alm
+                        on alm.AlmacenID = a.UbicacionID
+                    WHERE a.Estado = 0"""):
+                    for value in row:
+                        print (value, end = "  |  ")
                 input()
 
             var1 = input("Ingrese el nuevo nombre ")
             while(x == True):
                 var2 = input("Ingrese la familia ")
-                c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + var2 +"' ")
+                c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE Estado = 0 AND FamiliaID= '" + var2 +"' ")
                 for row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + var2 +"' "):
                     # if row not in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
                     #     print ("No existe la familia ingresada. Consulte el manual para más información")
@@ -215,8 +222,37 @@ class Consulta:
         print("Tabla Artículos")
 
         #Poner columna por columna
-        for row in c.execute('SELECT Articulos.ArticuloID from Articulos'):
+        for row in c.execute('SELECT * from Articulos'):
             print (row)
+
+class Ordenes:
+    def buscarOrdenes(self):
+        # where Cantidad <= Minimo
+        c.execute('select * from Articulos')
+        existen = c.fetchall()
+        #Regresa falso si no hay ordenes que pedir, si no, regresa el arreglo de listas de articulos que requieren ordenes
+        if not existen:
+            print ("No hay ordenes que pedir")
+            input()
+            return False
+        else:
+            return existen
+
+    def realizarOrdenes(self, lista):
+        ordenes = {}
+        for row in lista:
+            print (row)
+            #0 es ArticuloID, 5 es Cantidad, 6 es Maximo 
+            ordenes[row[0]] = row[6] - row[5]
+        print (ordenes)
+
+    def mostrar(self):
+        print("Ordenes por realizar:")
+        ordenes = self.buscarOrdenes()
+        if not ordenes:
+            return
+        self.realizarOrdenes(ordenes)
+        input()
 
 
 #Region "Maneras de recorrer una consulta BETA "

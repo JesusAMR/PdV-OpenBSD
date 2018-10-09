@@ -1,28 +1,34 @@
+CREATE TABLE FamiliadeArticulos(
+    FamiliaID INTEGER PRIMARY KEY,
+    Marca VARCHAR(30),
+    Modelo VARCHAR(30)
+);
+
+CREATE TABLE Almacenes(
+    AlmacenID VARCHAR(2),
+    NombreAlmacen VARCHAR(30),
+    Estado INTEGER DEFAULT 0
+);
+
 CREATE TABLE Articulos
 (
-    ArticuloID  INTEGER PRIMARY KEY,
-    Nombre varchar(30),
-    Familia INTEGER,
+    ArticuloID INTEGER PRIMARY KEY,
+    UbicacionID INTEGER,
+    FamiliaID INTEGER,
+    Nombre VARCHAR(30),
     Costo FLOAT,
-    Cantidad INT NOT NULL,
-    Maximo INT NOT NULL,
-    Minimo INT NOT NULL,
-    UbicacionID INT NOT NULL
+    Cantidad INTEGER NOT NULL,
+    Maximo INTEGER NOT NULL,
+    Minimo INTEGER NOT NULL,
+    Estado INTEGER DEFAULT 0,
+    FOREIGN KEY(UbicacionID) REFERENCES Almacenes(AlmacenID),
+    FOREIGN KEY (FamiliaID) REFERENCES FamiliadeArticulos(FamiliaID)
 );
 
 CREATE TABLE Proveedor(
     ProveedorID INTEGER PRIMARY KEY,
-    Nombre varchar(30),
-    ArticuloID  INTEGER
-);
-
-CREATE TABLE FamiliadeArticulos(
-    FamiliaID INTEGER PRIMARY KEY,
-    Marca varchar(30),
-    Modelo varchar(30)
-);
-
-CREATE TABLE Almacenes(
-    AlmacenID varchar(2),
-    NombreAlmacen varchar(30)
+    ArticuloID INTEGER,
+    Nombre VARCHAR(30),
+    Estado INTEGER DEFAULT 0,
+    FOREIGN KEY(ArticuloID) REFERENCES Articulos(ArticuloID)
 );
