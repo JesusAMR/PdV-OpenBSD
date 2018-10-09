@@ -4,7 +4,7 @@ import query
 
 x = True
 while(x == True):
-    os.system("cls")
+    os.system("clear")
     print ("""Menú del proyecto xd
         1.- Dar de alta. Baka, Actualizar
         2.- Hacer pedidos xD
