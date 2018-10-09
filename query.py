@@ -209,6 +209,7 @@ class Pedidos:
         #     print ("No te pases de pendejo, ya viste las tablas y todavía quieres añadirle de más, no mames, deberían correte como proveedor.")
 
         #cant_solitar += cant_solitar
+
 class Consulta:
     def mostrar(self):
         print("Tabla Artículos")

@@ -47,21 +47,6 @@ class SQL:
             self.executeQuery(table);
 x = SQL()
 x.crearTabla()
-
-## Insertamos una fila
-# c.execute("INSERT INTO Almacenes (AlmacenID, NombreAlmacen) VALUES ('C3', 'Niños')")
-# c.execute("INSERT INTO Almacenes (AlmacenID, NombreAlmacen) VALUES ('C1', 'Adultos')")
-# c.execute("INSERT INTO Almacenes (AlmacenID, NombreAlmacen) VALUES ('B1', 'Damas')")
-# c.execute("INSERT INTO Proveedor (Nombre) VALUES ('Sonny Javier')")
-# c.execute("INSERT INTO Proveedor (Nombre) VALUES ('Rebbeca Ozuna')")
-# c.execute("INSERT INTO Proveedor (Nombre) VALUES ('Luis Mario García')")
-# c.execute("INSERT INTO Proveedor (Nombre) VALUES ('Pablo Quiroz')")
-
-
-
-
-
-
 # Save (commit) the changes
 conn.commit()
 #print (list(c.execute("SELECT * FROM TablaArticulos")))
