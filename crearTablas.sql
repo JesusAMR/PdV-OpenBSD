@@ -1,5 +1,6 @@
 CREATE TABLE FamiliadeArticulos(
     FamiliaID INTEGER PRIMARY KEY,
+    Nombre VARCHAR(30),
     Marca VARCHAR(30),
     Modelo VARCHAR(30)
 );

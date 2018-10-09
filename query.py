@@ -7,6 +7,21 @@ c = conn.cursor()
 
 cant_solitar = 0
 
+def ejecutarQuery(consulta):
+    c.execute(consulta)
+    existen = c.fetchall()
+    #Regresa falso si no hay ordenes que pedir, si no, regresa el arreglo de listas de articulos que requieren ordenes
+    if not existen:
+        return False
+    else:
+        return existen
+
+def imprimirListaFilas(lista, encabezadoDefault = ""):
+    print(encabezadoDefault, end = "")
+    for fila in lista:
+        for valor in fila:
+            print(valor, end = " | ")
+        print("")
 
 class InsertarArticulos:
     
@@ -142,6 +157,11 @@ class InsertarFamiliaArticulos:
         input()
 
 class Inventario:
+    def mostarFamilia(self):
+        consulta = 'SELECT * FROM FamiliadeArticulos'
+        encabezado = "Identificador | Nombre|\n"
+        lista = ejecutarQuery(consulta)
+        imprimirListaFilas(lista, encabezado)
     def mostrar(self):
         print("Tabla Artículos")
         for row in c.execute('SELECT * FROM Articulos'):
@@ -218,18 +238,78 @@ class Pedidos:
         #cant_solitar += cant_solitar
 
 class Consulta:
-    def mostrar(self):
-        print("Tabla Artículos")
+    def __init__(self):
+        self.encabezado = "ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+    def menu(self):
+        x = True
+        while(x == True):
+            os.system("clear")
+            print ("""¿Como desea filtrar los articulos?
+                1.- Familia de articulos
+                2.- Nombre de proveedor
+                3.- Sin filtros
+                4.- Salir
+                """)
+            opc = int(input("Ingrese una opción: "))
+            if opc == 1:
+                Inventario().mostarFamilia()
+                familiadID = int(input("Ingrese el identificador de la familia por la cual desea filtrar: "))
+                os.system("clear")
+                consulta = """ SELECT a.ArticuloID,
+                    a.Nombre,
+                    fa.Marca,
+                    fa.Modelo,
+                    al.NombreAlmacen,
+                    a.Costo,
+                    a.Cantidad,
+                    a.Maximo,
+                    a.Minimo
+                    FROM Articulos a
+                    INNER JOIN Almacenes al
+                        ON al.AlmacenID = a.UbicacionID
+                    INNER JOIN FamiliadeArticulos fa
+                        ON fa.FamiliaID = a.FamiliaID
+                        AND fa.FamiliaID = %s
+                    WHERE a.Estado = 0
+                """ % (familiadID)
+                listaFilas = ejecutarQuery(consulta)
+                imprimirListaFilas(listaFilas, self.encabezado)
+                input()
+            elif opc == 4:
+                x = False
 
+    def mostrar(self):
+        print("Inventario")
+        
         #Poner columna por columna
-        for row in c.execute('SELECT * from Articulos'):
-            print (row)
+        consulta = """ SELECT a.ArticuloID,
+            a.Nombre,
+            fa.Marca,
+            fa.Modelo,
+            al.NombreAlmacen,
+            a.Costo,
+            a.Cantidad,
+            a.Maximo,
+            a.Minimo
+            FROM Articulos a
+            INNER JOIN Almacenes al
+                ON al.AlmacenID = a.UbicacionID
+            INNER JOIN FamiliadeArticulos fa
+                ON fa.FamiliaID = a.FamiliaID
+            WHERE a.Estado = 0
+        """
+        listaFilas = ejecutarQuery(consulta)
+        if not listaFilas:
+            print("No hay datos en el inventario")
+            input()
+            return false
+        imprimirListaFilas(listaFilas, encabezado)
+        input()
 
 class Ordenes:
     def buscarOrdenes(self):
-        # where Cantidad <= Minimo
-        c.execute('select * from Articulos')
-        existen = c.fetchall()
+        consulta = "SELECT * FROM Articulos WHERE Cantidad <= Minimo AND Estado = 0"
+        existen = ejecutarQuery(consulta)
         #Regresa falso si no hay ordenes que pedir, si no, regresa el arreglo de listas de articulos que requieren ordenes
         if not existen:
             print ("No hay ordenes que pedir")
@@ -238,36 +318,51 @@ class Ordenes:
         else:
             return existen
 
-    def realizarOrdenes(self, lista):
-        ordenes = {}
+    def consultarOrdenes(self, lista):
+        ordenes = []
+        encabezado = "|ID del Artículo | Nombre | Costo | Cantidad | Máximo | Mínimo|\n"
         for row in lista:
-            print (row)
-            #0 es ArticuloID, 5 es Cantidad, 6 es Maximo 
-            ordenes[row[0]] = row[6] - row[5]
-        print (ordenes)
+            #0 es ID del Articulo, 3 es Nombre, 5 es Cantidad y 6 es Maximo por lo tanto queda lo faltante para completar el max
+            ordenes.append([row[0], row[3], row[6] - row[5]])
+        for orden in ordenes:
+            print("Identificador: " + str(orden[0]) + "\nNombre de Articulo: " + str(orden[1]) + "\nCantidad requerida: " + str(orden[2]) + "\n")
+        return ordenes
+
+    def mostrarOrdenes(self):
+        print("Ordenes por realizar:")
+        ordenes = self.buscarOrdenes()
+        if not ordenes:
+            return
+        self.consultarOrdenes(ordenes)
+        input()
 
     def mostrar(self):
         print("Ordenes por realizar:")
         ordenes = self.buscarOrdenes()
         if not ordenes:
             return
-        self.realizarOrdenes(ordenes)
+        pendientes = self.consultarOrdenes(ordenes)
+
+        familiadID = int(input("Ingrese el identificador del articulo al cual se desea realizar reabastecer: "))
+        consulta = """UPDATE Articulos
+            a.Nombre,
+            fa.Marca,
+            fa.Modelo,
+            al.NombreAlmacen,
+            a.Costo,
+            a.Cantidad,
+            a.Maximo,
+            a.Minimo
+            FROM Articulos a
+            INNER JOIN Almacenes al
+                ON al.AlmacenID = a.UbicacionID
+            INNER JOIN FamiliadeArticulos fa
+                ON fa.FamiliaID = a.FamiliaID
+                AND fa.FamiliaID = %s
+            WHERE a.Estado = 0
+        """ % (familiadID)
+        listaFilas = ejecutarQuery(consulta)
+        imprimirListaFilas(listaFilas, self.encabezado)
         input()
 
-
-#Region "Maneras de recorrer una consulta BETA "
-        # query = c.execute("SELECT * FROM Articulos")
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # print (query.fetchone())
-        # for celda in query.fetchall():
-        #     print u"Artículo ID: %d, Modelo ID: %d,Artículo ID: %d,Artículo ID: %d,Artículo ID: %d,Artículo ID: %d,Artículo ID: %d" % (celda[0], celda[1],celda[2],celda[3],celda[4],celda[5],celda[6])
-        #print (list(c.execute("SELECT * FROM Articulos")))
-        # conn.commit()
-#end region
+        input()

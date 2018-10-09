@@ -4,7 +4,10 @@ import query
 x = True
 while(x == True):
     os.system("clear")
-    print ("""Menú del proyecto\nIngrese la opcion que desea 
+    Ordenes = query.Ordenes().mostrarOrdenes()
+    if Ordenes:
+        "Hay ordenes que realizar, favor de consultarlas"
+    print ("""Menú del proyecto
         1.- Dar de alta
         2.- Hacer pedidos
         3.- Hacer consulta
@@ -33,7 +36,7 @@ while(x == True):
         Proveedor.pedidoProovedor()
     if opc == 3:
         Consulta = query.Consulta()
-        Consulta.mostrar()
+        Consulta.menu()
     if opc == 4:
         Ordenes = query.Ordenes()
         Ordenes.mostrar()
