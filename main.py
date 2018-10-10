@@ -15,11 +15,12 @@ while(x == True):
         5.- Salir
         """)
     opc = int(input("Ingrese una opción: "))
+    os.system("clear")
     if opc == 1:
         Articulos = query.InsertarArticulos()
         opc1 = int(input("""¿Desea dar de alta, eliminar o actualizar?
                         1.- Dar de alta
-                        2.- Eliminar registro
+                        2.- Eliminar articulo
                         3.- Actualizar
                         4.- Salir
                         """)

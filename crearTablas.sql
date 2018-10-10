@@ -1,11 +1,13 @@
-CREATE TABLE FamiliadeArticulos(
+CREATE TABLE FamiliadeArticulos
+(
     FamiliaID INTEGER PRIMARY KEY,
     Nombre VARCHAR(30),
     Marca VARCHAR(30),
     Modelo VARCHAR(30)
 );
 
-CREATE TABLE Almacenes(
+CREATE TABLE Almacenes
+(
     AlmacenID VARCHAR(2),
     NombreAlmacen VARCHAR(30),
     Estado INTEGER DEFAULT 0
@@ -26,10 +28,21 @@ CREATE TABLE Articulos
     FOREIGN KEY (FamiliaID) REFERENCES FamiliadeArticulos(FamiliaID)
 );
 
-CREATE TABLE Proveedor(
+CREATE TABLE Proveedor
+(
     ProveedorID INTEGER PRIMARY KEY,
     ArticuloID INTEGER,
     Nombre VARCHAR(30),
     Estado INTEGER DEFAULT 0,
     FOREIGN KEY(ArticuloID) REFERENCES Articulos(ArticuloID)
 );
+
+CREATE TABLE Orden
+(
+    OrdenID INTEGER PRIMARY KEY,
+    ArticuloID INTEGER,
+    ProveedorID INTEGER,
+    Cantidad INTEGER NOT NULL,
+    FOREIGN KEY(ArticuloID) REFERENCES Articulos(ArticuloID),
+    FOREIGN KEY(ProveedorID) REFERENCES Proveedor(ProveedorID)
+)

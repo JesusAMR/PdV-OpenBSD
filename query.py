@@ -14,11 +14,13 @@ def ejecutarQuery(consulta):
     if not existen:
         return False
     else:
+        conn.commit()
         return existen
 
 def imprimirListaFilas(lista, encabezadoDefault = ""):
     print(encabezadoDefault, end = "")
     for fila in lista:
+        print("|", end = " ")
         for valor in fila:
             print(valor, end = " | ")
         print("")
@@ -90,49 +92,87 @@ class InsertarArticulos:
             c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' ")
             for row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' "):
                 if row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' "):
-                    c.execute("UPDATE Articulos SET Estado = 1 WHERE ArticuloID = '" + artID +"'")
+                    c.execute("UPDATE Articulos SET Estado = 1 WHERE ArticuloID = %s" % (artID))
                     x = False
                 input()
         conn.commit()
 
     def actualizarRegistro(self):
         x = True
+        self.encabezado = "Articulos\n|ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+        self.consultaArt     =   "SELECT * FROM Articulos WHERE ArticuloID = %s"
+        self.consultaDefault = """ SELECT a.ArticuloID,
+            a.Nombre,
+            fa.Marca,
+            fa.Modelo,
+            al.NombreAlmacen,
+            a.Costo,
+            a.Cantidad,
+            a.Maximo,
+            a.Minimo
+            FROM Articulos a
+            INNER JOIN Almacenes al
+                ON al.AlmacenID = a.UbicacionID
+            INNER JOIN FamiliadeArticulos fa
+                ON fa.FamiliaID = a.FamiliaID
+            WHERE a.Estado = 0
+            ORDER BY a.ArticuloID
+            """
+        self.actualizacionCompuesta = "UPDATE Articulos SET %s = %s WHERE ArticuloID = %s"
         while(x == True):
             artID = input("Ingrese el ID a actualizar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opción: ")
             if artID == '?':
-                print("Tabla Artículos")
-                print("ID del Artículo | Nombre | Marca | Modelo | Costo | Cantidad | Máximo | Mínimo | Ubicación")
-                for row in c.execute("""SELECT a.ArticuloID, a.Nombre, fa.Marca, fa.Modelo, a.Costo, a.Cantidad, a.Maximo, a.Minimo, alm.NombreAlmacen
-                    FROM Articulos a
-                    INNER JOIN FamiliadeArticulos fa
-                        on fa.FamiliaID = a.FamiliaID
-                    INNER JOIN Almacenes alm
-                        on alm.AlmacenID = a.UbicacionID
-                    WHERE a.Estado = 0"""):
-                    for value in row:
-                        print (value, end = "  |  ")
-                input()
-
-            var1 = input("Ingrese el nuevo nombre ")
-            while(x == True):
-                var2 = input("Ingrese la familia ")
-                c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE Estado = 0 AND FamiliaID= '" + var2 +"' ")
-                for row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + var2 +"' "):
-                    # if row not in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
-                    #     print ("No existe la familia ingresada. Consulte el manual para más información")
-                    if row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + var2 +"' "):
+                listaFilas = ejecutarQuery(self.consultaDefault)
+                if not listaFilas:
+                    print ("Primero ingrese o active algun articulo")
+                    return
+                imprimirListaFilas(listaFilas, self.encabezado)
+            else:
+                listaFilas = ejecutarQuery(self.consultaArt % (int(artID)))
+                if not listaFilas:
+                    print ("Ingrese un identificador correcto")
+                    continue
+                for fila in listaFilas:
+                    if int(artID) == fila[0]:
+                        articulo = int(artID)
                         x = False
-            var3 = input("Ingrese el nuevo costo:  ")
-            var4 = input("Ingrese la cantidad:  ")
-            var5 = input("Ingrese la cantidad máxima:  ")
-            var6  = input("Ingrese la cantidad minima:  ")
-            var7  = input("Ingrese la ubicaciónID:  ")
-            c.execute("UPDATE Articulos SET Nombre = '" + var1 +"', Familia= '" + var2 +"', Costo = '" + var3 +"', Cantidad = '" + var4 +"', Maximo = '" + var5 +"', Minimo= '" + var6 +"', UbicacionID = '" + var7 +"'   WHERE ArticuloID = '" + artID +"' ")
-            # for row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' "):
-            #     if row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + artID +"' "):
-            #         c.execute("DELETE FROM Articulos where ArticuloID = '" + artID +"'")
-            #         x = False
-            conn.commit()
+        x = True
+        columna = ""
+        while(x == True):
+            opcion = int(input("""Ingrese el numero de la opcion que desea modificar
+            1)Nombre
+            2)Costo
+            3)Cantidad
+            4)Maximo
+            5)Minimo
+            6)Estado
+            7)Ubicacion
+                """))
+            if opcion == 1:
+                columna = "Nombre"
+            if opcion == 2:
+                columna = "Costo"
+            if opcion == 3:
+                columna = "Cantidad"
+            if opcion == 4:
+                columna = "Maximo"
+            if opcion == 5:
+                columna = "Minimo"
+            if opcion == 6:
+                columna = "Estado"
+            if opcion == 7:
+                columna = "Ubicacion"
+            if len(columna) == 0:
+                print("Ingrese un valor correcto")
+                continue
+            x = False
+        x = True
+        valor = input("Ingrese el nuevo valor de la columna " + columna + " : ")
+        if opcion != 1:
+            valor = int(valor)
+        else:
+            valor = "'" + valor + "'"
+        listaFilas = ejecutarQuery(self.actualizacionCompuesta % (columna, valor, articulo))
 
 class InsertarProveedor:
     def __init__(self):
@@ -157,132 +197,26 @@ class InsertarFamiliaArticulos:
         input()
 
 class Inventario:
+    
     def mostarFamilia(self):
-        consulta = 'SELECT * FROM FamiliadeArticulos'
-        encabezado = "Identificador | Nombre|\n"
+        consulta = "SELECT * FROM FamiliadeArticulos"
+        encabezado = "|Identificador | Nombre|\n"
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
-    def mostrar(self):
-        print("Tabla Artículos")
-        for row in c.execute('SELECT * FROM Articulos'):
-            print (row)
-        print("Tabla Proveedor")
-        for row in c.execute('SELECT * FROM TablaProveedor'):
-            print (row)
-        print("Tabla Proveedor Artículos")
-        for row in c.execute('SELECT * FROM ProveedorArticulos'):
-            print (row)
-        print("Tabla Ubicación")
-        for row in c.execute('SELECT * FROM Ubicacion'):
-            print (row)
-        print("Tabla Ubicación Artículo")
-        for row in c.execute('SELECT * FROM UbicacionArticulo'):
-            print (row)
-        print("Tabla Familia")
-        for row in c.execute('SELECT * FROM Familia'):
-            print (row)
-        print("Tabla Familia Artículos")
-        for row in c.execute('SELECT * FROM FamiliaArticulos'):
-            print (row)
-        print("Tabla Marca")
-        for row in c.execute('SELECT * FROM Marca'):
-            print (row)
-        print("Tabla Marca Artículo")
-        for row in c.execute('SELECT * FROM MarcaArticulo'):
-            print (row)
-        #print("__________________________________________________")
+
+    def mostarProveedores(self):
+        consulta = "SELECT ProveedorID, Nombre FROM Proveedor WHERE Estado = 0"
+        encabezado = "|Identificador | Nombre|\n"
+        lista = ejecutarQuery(consulta)
+        imprimirListaFilas(lista, encabezado)
 
 class Pedidos:
     def __init__(self):
         self.ProveedorID = ""
         self.Nombre = ""
         self.ArticuloID = ""
-
-    def pedidoProovedor(self):
-        x = True
-        while (x ==True ):
-            pedido = input("Introduzca el ID del artículo al que desea hacer pedido\nSi no recuerda los datos introduzca ? para verlos xD")
-            if pedido == '?':
-                print("Tabla Artículos")
-                print("ID del Artículo | Nombre | Familia | Costo | Cantidad | Máximo | Mínimo | Ubicación")
-                for row in c.execute('SELECT * FROM Articulos'):
-                    print (row)
-                input()
-        #c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + pedido +"' ")
-            for row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + pedido +"' "):
-                if row in c.execute("SELECT ArticuloID FROM Articulos WHERE ArticuloID= '" + pedido +"' "):
-                    x = False
-        x = True
-        while (x ==True ):
-            vendor = input("Seleccione el proveedor: \nSi no conoce a los proveedores pulse ? para ver la tabla.\nSu opción: ")
-            if vendor == '?':
-                print("Tabla Proveedor")
-                for row in c.execute('SELECT ProveedorID, Nombre FROM Proveedor'):
-                    print (row)
-                input()
-            for row in c.execute("SELECT ProveedorID, Nombre FROM Proveedor WHERE ProveedorID ='" + vendor +"' "):
-                if row in c.execute("SELECT ProveedorID, Nombre FROM Proveedor WHERE ProveedorID= '" + vendor +"' "):
-                    x = False
-        cantidad = input ("Ahora introduzca la cantidad de artículos que necesita para completar su máximo requerido")
-        #c.execute("SELECT Cantidad, Maximo, Minimo FROM Articulos WHERE ArticuloID= '" + pedido +"' ")
-        maxinissin = c.execute("SELECT  Maximo FROM Articulos WHERE ArticuloID= '" + pedido +"' ")
-        print (list(maxinissin))
-        print("Sigue en desarrollo...........................")
-        # if (list(maxinissin)) > cantidad:
-        #     print("Hola mundo"
-        input()
-        c.execute("UPDATE Cantidad = '" + cantidad +"'  FROM Articulos WHERE ArticuloID= '" + pedido +"' ")
-        # if maxinissin > cantidad
-        #     print ("No te pases de pendejo, ya viste las tablas y todavía quieres añadirle de más, no mames, deberían correte como proveedor.")
-
-        #cant_solitar += cant_solitar
-
-class Consulta:
-    def __init__(self):
-        self.encabezado = "ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
-    def menu(self):
-        x = True
-        while(x == True):
-            os.system("clear")
-            print ("""¿Como desea filtrar los articulos?
-                1.- Familia de articulos
-                2.- Nombre de proveedor
-                3.- Sin filtros
-                4.- Salir
-                """)
-            opc = int(input("Ingrese una opción: "))
-            if opc == 1:
-                Inventario().mostarFamilia()
-                familiadID = int(input("Ingrese el identificador de la familia por la cual desea filtrar: "))
-                os.system("clear")
-                consulta = """ SELECT a.ArticuloID,
-                    a.Nombre,
-                    fa.Marca,
-                    fa.Modelo,
-                    al.NombreAlmacen,
-                    a.Costo,
-                    a.Cantidad,
-                    a.Maximo,
-                    a.Minimo
-                    FROM Articulos a
-                    INNER JOIN Almacenes al
-                        ON al.AlmacenID = a.UbicacionID
-                    INNER JOIN FamiliadeArticulos fa
-                        ON fa.FamiliaID = a.FamiliaID
-                        AND fa.FamiliaID = %s
-                    WHERE a.Estado = 0
-                """ % (familiadID)
-                listaFilas = ejecutarQuery(consulta)
-                imprimirListaFilas(listaFilas, self.encabezado)
-                input()
-            elif opc == 4:
-                x = False
-
-    def mostrar(self):
-        print("Inventario")
-        
-        #Poner columna por columna
-        consulta = """ SELECT a.ArticuloID,
+        self.encabezado = "|ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+        self.consultaDefault = """ SELECT a.ArticuloID,
             a.Nombre,
             fa.Marca,
             fa.Modelo,
@@ -297,18 +231,186 @@ class Consulta:
             INNER JOIN FamiliadeArticulos fa
                 ON fa.FamiliaID = a.FamiliaID
             WHERE a.Estado = 0
-        """
-        listaFilas = ejecutarQuery(consulta)
+            ORDER BY a.ArticuloID
+            """
+
+    def pedidoProovedor(self):
+        x = True
+        consultaArt     =   "SELECT * FROM Articulos WHERE ArticuloID = %s"
+        consultaProvArt =   "SELECT p.ProveedorID, p.Nombre FROM Articulos a INNER JOIN Proveedor p ON p.ArticuloID =  a.ArticuloID WHERE p.ArticuloID = %s"
+        actualizarArt   =   "UPDATE Articulos SET Cantidad = %s WHERE ArticuloID = %s"
+        consultaCantMax =   "SELECT ArticuloID, Cantidad, Maximo, Minimo FROM Articulos WHERE ArticuloID= %s "
+        while (x == True ):
+            pedido = input("Introduzca el ID del artículo al que desea hacer pedido\nSi no recuerda los datos introduzca ? para verlos\nSu opción: ")
+            if pedido == '?':
+                if Consulta().mostrar():
+                    return
+            else:
+                listaFilas = ejecutarQuery(consultaArt % (pedido))
+                if not listaFilas:
+                    print ("Ingrese un identificador correcto")
+                    continue
+                for fila in listaFilas:
+                    if int(pedido) == fila[0]:
+                        articulo = int(pedido)
+                        x = False
+        x = True
+        while (x == True ):
+            vendor = input("Seleccione el proveedor: \nSi no conoce a los proveedores pulse ? para verlos.\nSu opción: ")
+            if vendor == '?':
+                listaFilas = ejecutarQuery(consultaProvArt % (articulo))
+                if not listaFilas:
+                    return
+                imprimirListaFilas(listaFilas)
+            else:
+                listaFilas = ejecutarQuery(consultaProvArt % (articulo))
+                if not listaFilas:
+                    print  ("Ingrese un identificador correcto")
+                    continue
+                for fila in listaFilas:
+                    if int(vendor) == fila[0]:
+                        proveedor = int(vendor)
+                        x = False
+        x = True
+        while(x == True):
+            listaFilas = ejecutarQuery(consultaCantMax % (articulo))
+            imprimirListaFilas(listaFilas, "| Articulo | Cantidad | Maximo | Minimo |\n")
+            cantidadDef =   int(listaFilas[0][1])
+            maximo      =   int(listaFilas[0][2])
+            minimo      =   int(listaFilas[0][3])
+            cantidad    =   int(input ("Ahora introduzca la cantidad de artículos que desea pedir: "))
+            if not self.validarCantidad(cantidad, cantidadDef, maximo, minimo):
+                print ("Vuelva a ingresar la cantidad")
+                continue
+            listaFilas  =   ejecutarQuery(actualizarArt % (cantidadDef + cantidad, articulo))
+            print("Se ha realizado el pedido al proveedor")
+            x = False
+    
+    def validarCantidad(self, cant, cantdef, maximo, minimo):
+        if(cant > maximo):
+            return False
+        elif(cant + cantdef < minimo):
+            print("Su cantidad insertada no cumple el minimo del articulo")
+            return False
+        elif(cant + cantdef > maximo):
+            print("Su cantidad insertada sobrepasa el maximo del articulo")
+            return False
+        else:
+            return True
+
+class Consulta:
+    def __init__(self):
+        self.encabezado = "|ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+        self.encabezadoProveedor = "|ID del Artículo | Nombre | Nombre Proveedor | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+        self.consultaDefault = """ SELECT a.ArticuloID,
+            a.Nombre,
+            fa.Marca,
+            fa.Modelo,
+            al.NombreAlmacen,
+            a.Costo,
+            a.Cantidad,
+            a.Maximo,
+            a.Minimo
+            FROM Articulos a
+            INNER JOIN Almacenes al
+                ON al.AlmacenID = a.UbicacionID
+            INNER JOIN FamiliadeArticulos fa
+                ON fa.FamiliaID = a.FamiliaID
+            WHERE a.Estado = 0
+            ORDER BY a.ArticuloID
+            """
+        self.consultaFamilia = """ SELECT a.ArticuloID,
+            a.Nombre,
+            fa.Marca,
+            fa.Modelo,
+            al.NombreAlmacen,
+            a.Costo,
+            a.Cantidad,
+            a.Maximo,
+            a.Minimo
+            FROM Articulos a
+            INNER JOIN Almacenes al
+                ON al.AlmacenID = a.UbicacionID
+            INNER JOIN FamiliadeArticulos fa
+                ON fa.FamiliaID = a.FamiliaID
+                AND fa.FamiliaID = %s
+            WHERE a.Estado = 0
+            ORDER BY a.ArticuloID, fa.Nombre
+                """
+        self.consultaProveedor = """ SELECT a.ArticuloID,
+            a.Nombre,
+            p.Nombre,
+            fa.Marca,
+            fa.Modelo,
+            al.NombreAlmacen,
+            a.Costo,
+            a.Cantidad,
+            a.Maximo,
+            a.Minimo
+            FROM Articulos a
+            INNER JOIN Almacenes al
+                ON al.AlmacenID = a.UbicacionID
+            INNER JOIN FamiliadeArticulos fa
+                ON fa.FamiliaID = a.FamiliaID
+            INNER JOIN Proveedor p
+                ON p.ArticuloID = a.ArticuloID
+                AND p.ProveedorID = %s
+            WHERE a.Estado = 0
+            ORDER BY a.ArticuloID, p.Nombre
+                """
+    
+    def menu(self):
+        x = True
+        while(x == True):
+            os.system("clear")
+            print ("""¿Como desea filtrar los articulos?
+                1.- Familia de articulos
+                2.- Nombre de proveedor
+                3.- Sin filtros
+                4.- Salir
+                """)
+            opc = int(input("Ingrese una opción: "))
+            if opc == 1:
+                Inventario().mostarFamilia()
+                familiaID = int(input("Ingrese el identificador de la familia por la cual desea filtrar: "))
+                os.system("clear")
+                listaFilas = ejecutarQuery(self.consultaFamilia % (familiaID))
+                if not listaFilas:
+                    print("No hay articulos con esa familia")
+                else:
+                    imprimirListaFilas(listaFilas, self.encabezado)
+                input()
+            elif opc == 2:
+                Inventario().mostarProveedores()
+                proveedorID = int(input("Ingrese el identificador del proveedor por la cual desea filtrar: "))
+                os.system("clear")
+                listaFilas = ejecutarQuery(self.consultaProveedor % (proveedorID))
+                if not listaFilas:
+                    print("No hay articulos con ese proveedor")
+                else:
+                    imprimirListaFilas(listaFilas, self.encabezado)
+                input()
+            elif opc == 3:
+                self.mostrar()
+                input()
+            elif opc == 4:
+                x = False
+
+    def mostrar(self):
+        print("Inventario")
+        listaFilas = ejecutarQuery(self.consultaDefault)
         if not listaFilas:
             print("No hay datos en el inventario")
             input()
-            return false
-        imprimirListaFilas(listaFilas, encabezado)
-        input()
+            return False
+        imprimirListaFilas(listaFilas, self.encabezado)
 
 class Ordenes:
+    def __init__(self):
+        self.consultaActualizar = "UPDATE Articulos SET Cantidad = %s WHERE ArticuloID = %s"
+
     def buscarOrdenes(self):
-        consulta = "SELECT * FROM Articulos WHERE Cantidad <= Minimo AND Estado = 0"
+        consulta = "SELECT * FROM Articulos WHERE Cantidad < Minimo AND Estado = 0"
         existen = ejecutarQuery(consulta)
         #Regresa falso si no hay ordenes que pedir, si no, regresa el arreglo de listas de articulos que requieren ordenes
         if not existen:
@@ -336,33 +438,22 @@ class Ordenes:
         self.consultarOrdenes(ordenes)
         input()
 
+    def reabastecerArticulos(self, pendientes):
+        articuloID = int(input("Ingrese el identificador del articulo al cual se desea reabastecer: "))
+        cantidad = 0
+        for pendiente in pendientes:
+            if articuloID == pendiente[0]:
+                cantidad = pendiente[2]
+        listaFilas = ejecutarQuery(self.consultaActualizar % (cantidad, articuloID))
+        print (listaFilas)
+        input()
+        #imprimirListaFilas(listaFilas, self.encabezado)
+        #input()
+
     def mostrar(self):
         print("Ordenes por realizar:")
         ordenes = self.buscarOrdenes()
         if not ordenes:
             return
         pendientes = self.consultarOrdenes(ordenes)
-
-        familiadID = int(input("Ingrese el identificador del articulo al cual se desea realizar reabastecer: "))
-        consulta = """UPDATE Articulos
-            a.Nombre,
-            fa.Marca,
-            fa.Modelo,
-            al.NombreAlmacen,
-            a.Costo,
-            a.Cantidad,
-            a.Maximo,
-            a.Minimo
-            FROM Articulos a
-            INNER JOIN Almacenes al
-                ON al.AlmacenID = a.UbicacionID
-            INNER JOIN FamiliadeArticulos fa
-                ON fa.FamiliaID = a.FamiliaID
-                AND fa.FamiliaID = %s
-            WHERE a.Estado = 0
-        """ % (familiadID)
-        listaFilas = ejecutarQuery(consulta)
-        imprimirListaFilas(listaFilas, self.encabezado)
-        input()
-
-        input()
+        self.reabastecerArticulos(pendientes)
