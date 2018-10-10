@@ -18,7 +18,7 @@ while(x == True):
     os.system("clear")
     if opc == 1:
         Articulos = query.InsertarArticulos()
-        opc1 = int(input("""¿Desea dar de alta, eliminar o actualizar?
+        opc1 = int(input("""Desea dar de alta, eliminar o actualizar?
                         1.- Dar de alta
                         2.- Eliminar articulo
                         3.- Actualizar

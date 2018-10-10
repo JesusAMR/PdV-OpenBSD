@@ -91,7 +91,7 @@ class InsertarArticulos:
         x = True
         y = True
         while(x == True):
-            artID = input("Ingrese el ID a eliminar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opcion: ")
+            artID = input("Ingrese el ID a eliminar\nNo recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opcion: ")
             if artID == '?':
                 print("Tabla Articulos")
                 for row in c.execute('SELECT * FROM Articulos WHERE Estado = 0'):
@@ -128,7 +128,7 @@ class InsertarArticulos:
             ORDER BY a.ArticuloID
             """
         while(x == True):
-            artID = input("Ingrese el ID a actualizar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opcion: ")
+            artID = input("Ingrese el ID a actualizar\nNo recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opcion: ")
             if artID == '?':
                 listaFilas = ejecutarQuery(self.consultaDefault)
                 if not listaFilas:
@@ -190,7 +190,7 @@ class InsertarProveedor:
 
     def llenarDatosProveedor(self):
         provdesc = input('Ingrese la descricion del proveedor')
-        elimB = input('¿Que carajos es esto? No se, ingresa algo')
+        elimB = input('Que carajos es esto? No se, ingresa algo')
         c.execute("INSERT INTO TablaProveedor (proveedorDescripcion , eliminadoB) VALUES ('" + provdesc + "', '" + elimB + "')")
         conn.commit()
         input()
@@ -385,7 +385,7 @@ class Consulta:
         x = True
         while(x == True):
             os.system("clear")
-            print ("""¿Como desea filtrar los articulos?
+            print ("""Como desea filtrar los articulos?
                 1.- Familia de articulos
                 2.- Nombre de proveedor
                 3.- Sin filtros
