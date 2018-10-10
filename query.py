@@ -42,17 +42,17 @@ class InsertarArticulos:
         Nombre = input('Ingrese el nombre del articulo: ')
         ##############################
         while(x == True):
-            Familia = input('Ingrese la familia ')
-            c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' ")
-            for row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
-                # if row not in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
-                #     print ("No existe la familia ingresada. Consulte el manual para mas informacion")
-                if row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
+            listaFilas = Inventario().mostarFamilia()
+            Familia = input('Ingrese la familia: ')
+            for fila in listaFilas:
+                if int(Familia) == fila[0]:
                     x = False
+            if x:
+                print("Identificador incorrecto")
         ###########################
         costo = input('Ingrese el costo del articulo: ')
         ############################## CANTIDAD
-        cantidad  = input('Ingrese la cantidad de articulos')
+        cantidad  = input('Ingrese la cantidad de articulos: ')
         ############################## MaXIMO
         x = True
         while(x == True):
@@ -74,17 +74,28 @@ class InsertarArticulos:
         x = True
         while(x == True):
             listaFilas = Inventario().mostrarUbicacion()
-            ubicacionID = input('Ingrese el ID de la ubicacion')
+            ubicacionID = input('Ingrese el ID de la ubicacion: ')
             for fila in listaFilas:
                 if ubicacionID == fila[0]:
                     x = False
-            if not x:
+            if x:
                 print("Identificador incorrecto")
         ##############################
-
-        c.execute("INSERT INTO Articulos(UbicacionID, FamiliaID, Nombre, Costo, Cantidad, Maximo, Minimo) values (?, ?, '" + Nombre + "' , '" + costo + "' , '" + cantidad + "'  , ? , ?)", (ubicacionID, Familia, max, min))
+        c.execute("INSERT INTO Articulos(UbicacionID, FamiliaID, Nombre, Costo, Cantidad, Maximo, Minimo) VALUES (?, ?, '" + Nombre + "' , '" + costo + "' , '" + cantidad + "'  , ? , ?)", (ubicacionID, Familia, max, min))
+        c.execute("SELECT MAX(ArticuloID) FROM Articulos")
+        d = c.fetchall()
+        articuloID = int(d[0][0])
+        x = True
+        while(x == True):
+            listaFilas = Inventario().mostarProveedores()
+            proveedorID = int(input('Ingrese el ID del proveedor: '))
+            for fila in listaFilas:
+                if proveedorID == fila[0]:
+                    x = False
+            if x:
+                print("Identificador incorrecto")
+        c.execute("INSERT INTO ProveedorArt(ProveedorID, ArticuloID) VALUES (?, ?)", (proveedorID, articuloID))
         conn.commit()
-        #print (list(c.execute("SELECT * FROM Articulos")))
         input()
 
     def eliminarRegistro(self):
@@ -176,7 +187,9 @@ class InsertarArticulos:
             x = False
         x = True
         valor = input("Ingrese el nuevo valor de la columna " + columna + " : ")
-        if opcion != 1:
+        if opcion == 2:
+            valor = float(valor)
+        elif opcion != 1 and opcion != 2:
             valor = int(valor)
         else:
             valor = "'" + valor + "'"
@@ -211,12 +224,14 @@ class Inventario:
         encabezado = "|Identificador | Nombre|\n"
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
+        return lista
 
     def mostarProveedores(self):
         consulta = "SELECT ProveedorID, Nombre FROM Proveedor WHERE Estado = 0"
         encabezado = "|Identificador | Nombre|\n"
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
+        return lista
 
     def mostrarUbicacionArticulo(self, articuloID):
         consulta = "SELECT al.AlmacenID, al.Nombre, a.Nombre FROM Almacenes al INNER JOIN Articulos a ON a.ArticuloID = al.ArticuloID AND a.ArticulosID = %s WHERE al.Estado = 0"
@@ -224,13 +239,12 @@ class Inventario:
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
     
-    def mostrarUbicacion(self, articuloID):
-        consulta = "SELECT AlmacenID, Nombre FROM Almacenes WHERE Estado = 0"
+    def mostrarUbicacion(self):
+        consulta = "SELECT AlmacenID, NombreAlmacen FROM Almacenes WHERE Estado = 0"
         encabezado = "|Identificador | Nombre|\n"
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
         return lista
-
 
 class Pedidos:
     def __init__(self):
@@ -259,7 +273,7 @@ class Pedidos:
     def pedidoProovedor(self):
         x = True
         consultaArt     =   "SELECT * FROM Articulos WHERE ArticuloID = %s"
-        consultaProvArt =   "SELECT p.ProveedorID, p.Nombre FROM Articulos a INNER JOIN Proveedor p ON p.ArticuloID =  a.ArticuloID WHERE p.ArticuloID = %s"
+        consultaProvArt =   "SELECT p.ProveedorID, p.Nombre FROM Articulos a INNER JOIN ProveedorArt pa ON pa.ArticuloID =  a.ArticuloID INNER JOIN Proveedor p ON p.ProveedorID = pa.ProveedorID WHERE pa.ArticuloID = %s"
         actualizarArt   =   "UPDATE Articulos SET Cantidad = %s WHERE ArticuloID = %s"
         consultaCantMax =   "SELECT ArticuloID, Cantidad, Maximo, Minimo FROM Articulos WHERE ArticuloID= %s "
         while (x == True ):
@@ -374,9 +388,11 @@ class Consulta:
                 ON al.AlmacenID = a.UbicacionID
             INNER JOIN FamiliadeArticulos fa
                 ON fa.FamiliaID = a.FamiliaID
+            INNER JOIN ProveedorArt pa
+                ON pa.ArticuloID = a.ArticuloID
+                AND pa.ProveedorID = %s
             INNER JOIN Proveedor p
-                ON p.ArticuloID = a.ArticuloID
-                AND p.ProveedorID = %s
+                ON p.ProveedorID = pa.ProveedorID
             WHERE a.Estado = 0
             ORDER BY a.ArticuloID, p.Nombre
                 """
@@ -410,7 +426,7 @@ class Consulta:
                 if not listaFilas:
                     print("No hay articulos con ese proveedor")
                 else:
-                    imprimirListaFilas(listaFilas, self.encabezado)
+                    imprimirListaFilas(listaFilas, self.encabezadoProveedor)
                 input()
             elif opc == 3:
                 self.mostrar()

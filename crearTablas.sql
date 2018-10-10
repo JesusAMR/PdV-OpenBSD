@@ -31,9 +31,17 @@ CREATE TABLE Articulos
 CREATE TABLE Proveedor
 (
     ProveedorID INTEGER PRIMARY KEY,
-    ArticuloID INTEGER,
     Nombre VARCHAR(30),
+    Estado INTEGER DEFAULT 0
+);
+
+CREATE TABLE ProveedorArt
+(
+    ProvArtID INTEGER PRIMARY KEY,
+    ProveedorID INTEGER,
+    ArticuloID INTEGER,
     Estado INTEGER DEFAULT 0,
+    FOREIGN KEY(ProveedorID) REFERENCES Proveedor(ProveedorID),
     FOREIGN KEY(ArticuloID) REFERENCES Articulos(ArticuloID)
 );
 
