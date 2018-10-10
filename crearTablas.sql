@@ -45,4 +45,4 @@ CREATE TABLE Orden
     Cantidad INTEGER NOT NULL,
     FOREIGN KEY(ArticuloID) REFERENCES Articulos(ArticuloID),
     FOREIGN KEY(ProveedorID) REFERENCES Proveedor(ProveedorID)
-)
+);

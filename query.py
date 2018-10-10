@@ -39,39 +39,47 @@ class InsertarArticulos:
     def llenarDatosArticulos(self):
         x = True
         ##############################
-        Nombre = input('Ingrese el nombre del artículo: ')
+        Nombre = input('Ingrese el nombre del articulo: ')
         ##############################
         while(x == True):
             Familia = input('Ingrese la familia ')
             c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' ")
             for row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
                 # if row not in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
-                #     print ("No existe la familia ingresada. Consulte el manual para más información")
+                #     print ("No existe la familia ingresada. Consulte el manual para mas informacion")
                 if row in c.execute("SELECT FamiliaID FROM FamiliadeArticulos WHERE FamiliaID= '" + Familia +"' "):
                     x = False
         ###########################
-        costo = input('Ingrese el costo del artículo: ')
-        ############################## CANTIDAD XD
-        cantidad  = input('Ingrese la cantidad de artículos')
-        ############################## MÁXIMO
+        costo = input('Ingrese el costo del articulo: ')
+        ############################## CANTIDAD
+        cantidad  = input('Ingrese la cantidad de articulos')
+        ############################## MaXIMO
         x = True
-        while x==True:
-            max = int(input('Ingrese el max de artículos: '))
+        while(x == True):
+            max = int(input('Ingrese el max de articulos: '))
             if max == '' or max < 5 or max > 100000 :
-                print ("La cantidad ingresada no está permitida")
+                print ("La cantidad ingresada no esta permitida")
             else:
                 x = False
                 break
         ############################## MINIMO
         x = True
-        while x==True:
+        while(x == True):
             min = int(input('Ingrese el minimo de articulos: '))
             if min < max and min > 1:
                 x = False
             else:
                 print("No se puede ingresar esa cantidad")
         ##############################
-        ubicacionID = input('Ingrese el ID de la ubicación')
+        x = True
+        while(x == True):
+            listaFilas = Inventario().mostrarUbicacion()
+            ubicacionID = input('Ingrese el ID de la ubicacion')
+            for fila in listaFilas:
+                if ubicacionID == fila[0]:
+                    x = False
+            if not x:
+                print("Identificador incorrecto")
         ##############################
 
         c.execute("INSERT INTO Articulos(UbicacionID, FamiliaID, Nombre, Costo, Cantidad, Maximo, Minimo) values (?, ?, '" + Nombre + "' , '" + costo + "' , '" + cantidad + "'  , ? , ?)", (ubicacionID, Familia, max, min))
@@ -83,9 +91,9 @@ class InsertarArticulos:
         x = True
         y = True
         while(x == True):
-            artID = input("Ingrese el ID a eliminar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opción: ")
+            artID = input("Ingrese el ID a eliminar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opcion: ")
             if artID == '?':
-                print("Tabla Artículos")
+                print("Tabla Articulos")
                 for row in c.execute('SELECT * FROM Articulos WHERE Estado = 0'):
                     print (row)
 
@@ -99,9 +107,10 @@ class InsertarArticulos:
 
     def actualizarRegistro(self):
         x = True
-        self.encabezado = "Articulos\n|ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
-        self.consultaArt     =   "SELECT * FROM Articulos WHERE ArticuloID = %s"
-        self.consultaDefault = """ SELECT a.ArticuloID,
+        self.encabezado             = "Articulos\n|ID del Articulo | Nombre | Marca | Modelo | Ubicacion | Costo | Cantidad | Maximo | Minimo|\n"
+        self.consultaArt            = "SELECT * FROM Articulos WHERE ArticuloID = %s"
+        self.actualizacionCompuesta = "UPDATE Articulos SET %s = %s WHERE ArticuloID = %s"
+        self.consultaDefault        = """ SELECT a.ArticuloID,
             a.Nombre,
             fa.Marca,
             fa.Modelo,
@@ -118,9 +127,8 @@ class InsertarArticulos:
             WHERE a.Estado = 0
             ORDER BY a.ArticuloID
             """
-        self.actualizacionCompuesta = "UPDATE Articulos SET %s = %s WHERE ArticuloID = %s"
         while(x == True):
-            artID = input("Ingrese el ID a actualizar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opción: ")
+            artID = input("Ingrese el ID a actualizar\n¿No recuerda el ID? Ingrese '?' para mostrar todos los registros.\nSu opcion: ")
             if artID == '?':
                 listaFilas = ejecutarQuery(self.consultaDefault)
                 if not listaFilas:
@@ -181,8 +189,8 @@ class InsertarProveedor:
         self.eliminadoB = ""
 
     def llenarDatosProveedor(self):
-        provdesc = input('Ingrese la descrición del proveedor')
-        elimB = input('¿Qué carajos es esto? No sé, ingresa algo')
+        provdesc = input('Ingrese la descricion del proveedor')
+        elimB = input('¿Que carajos es esto? No se, ingresa algo')
         c.execute("INSERT INTO TablaProveedor (proveedorDescripcion , eliminadoB) VALUES ('" + provdesc + "', '" + elimB + "')")
         conn.commit()
         input()
@@ -199,7 +207,7 @@ class InsertarFamiliaArticulos:
 class Inventario:
     
     def mostarFamilia(self):
-        consulta = "SELECT * FROM FamiliadeArticulos"
+        consulta = "SELECT FamiliaID, Nombre FROM FamiliadeArticulos"
         encabezado = "|Identificador | Nombre|\n"
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
@@ -210,12 +218,26 @@ class Inventario:
         lista = ejecutarQuery(consulta)
         imprimirListaFilas(lista, encabezado)
 
+    def mostrarUbicacionArticulo(self, articuloID):
+        consulta = "SELECT al.AlmacenID, al.Nombre, a.Nombre FROM Almacenes al INNER JOIN Articulos a ON a.ArticuloID = al.ArticuloID AND a.ArticulosID = %s WHERE al.Estado = 0"
+        encabezado = "|Identificador Almacen | Nombre Almacen | Nombre Articulo|\n"
+        lista = ejecutarQuery(consulta)
+        imprimirListaFilas(lista, encabezado)
+    
+    def mostrarUbicacion(self, articuloID):
+        consulta = "SELECT AlmacenID, Nombre FROM Almacenes WHERE Estado = 0"
+        encabezado = "|Identificador | Nombre|\n"
+        lista = ejecutarQuery(consulta)
+        imprimirListaFilas(lista, encabezado)
+        return lista
+
+
 class Pedidos:
     def __init__(self):
         self.ProveedorID = ""
         self.Nombre = ""
         self.ArticuloID = ""
-        self.encabezado = "|ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+        self.encabezado = "|ID del Articulo | Nombre | Marca | Modelo | Ubicacion | Costo | Cantidad | Maximo | Minimo|\n"
         self.consultaDefault = """ SELECT a.ArticuloID,
             a.Nombre,
             fa.Marca,
@@ -241,7 +263,7 @@ class Pedidos:
         actualizarArt   =   "UPDATE Articulos SET Cantidad = %s WHERE ArticuloID = %s"
         consultaCantMax =   "SELECT ArticuloID, Cantidad, Maximo, Minimo FROM Articulos WHERE ArticuloID= %s "
         while (x == True ):
-            pedido = input("Introduzca el ID del artículo al que desea hacer pedido\nSi no recuerda los datos introduzca ? para verlos\nSu opción: ")
+            pedido = input("Introduzca el ID del articulo al que desea hacer pedido\nSi no recuerda los datos introduzca ? para verlos\nSu opcion: ")
             if pedido == '?':
                 if Consulta().mostrar():
                     return
@@ -256,7 +278,7 @@ class Pedidos:
                         x = False
         x = True
         while (x == True ):
-            vendor = input("Seleccione el proveedor: \nSi no conoce a los proveedores pulse ? para verlos.\nSu opción: ")
+            vendor = input("Seleccione el proveedor: \nSi no conoce a los proveedores pulse ? para verlos.\nSu opcion: ")
             if vendor == '?':
                 listaFilas = ejecutarQuery(consultaProvArt % (articulo))
                 if not listaFilas:
@@ -278,7 +300,7 @@ class Pedidos:
             cantidadDef =   int(listaFilas[0][1])
             maximo      =   int(listaFilas[0][2])
             minimo      =   int(listaFilas[0][3])
-            cantidad    =   int(input ("Ahora introduzca la cantidad de artículos que desea pedir: "))
+            cantidad    =   int(input ("Ahora introduzca la cantidad de articulos que desea pedir: "))
             if not self.validarCantidad(cantidad, cantidadDef, maximo, minimo):
                 print ("Vuelva a ingresar la cantidad")
                 continue
@@ -300,8 +322,8 @@ class Pedidos:
 
 class Consulta:
     def __init__(self):
-        self.encabezado = "|ID del Artículo | Nombre | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
-        self.encabezadoProveedor = "|ID del Artículo | Nombre | Nombre Proveedor | Marca | Modelo | Ubicación | Costo | Cantidad | Máximo | Mínimo|\n"
+        self.encabezado = "|ID del Articulo | Nombre | Marca | Modelo | Ubicacion | Costo | Cantidad | Maximo | Minimo|\n"
+        self.encabezadoProveedor = "|ID del Articulo | Nombre | Nombre Proveedor | Marca | Modelo | Ubicacion | Costo | Cantidad | Maximo | Minimo|\n"
         self.consultaDefault = """ SELECT a.ArticuloID,
             a.Nombre,
             fa.Marca,
@@ -369,7 +391,7 @@ class Consulta:
                 3.- Sin filtros
                 4.- Salir
                 """)
-            opc = int(input("Ingrese una opción: "))
+            opc = int(input("Ingrese una opcion: "))
             if opc == 1:
                 Inventario().mostarFamilia()
                 familiaID = int(input("Ingrese el identificador de la familia por la cual desea filtrar: "))
@@ -382,7 +404,7 @@ class Consulta:
                 input()
             elif opc == 2:
                 Inventario().mostarProveedores()
-                proveedorID = int(input("Ingrese el identificador del proveedor por la cual desea filtrar: "))
+                proveedorID = int(input("Ingrese el identificador del proveedor por el cual desea filtrar: "))
                 os.system("clear")
                 listaFilas = ejecutarQuery(self.consultaProveedor % (proveedorID))
                 if not listaFilas:
@@ -422,7 +444,7 @@ class Ordenes:
 
     def consultarOrdenes(self, lista):
         ordenes = []
-        encabezado = "|ID del Artículo | Nombre | Costo | Cantidad | Máximo | Mínimo|\n"
+        encabezado = "|ID del Articulo | Nombre | Costo | Cantidad | Maximo | Minimo|\n"
         for row in lista:
             #0 es ID del Articulo, 3 es Nombre, 5 es Cantidad y 6 es Maximo por lo tanto queda lo faltante para completar el max
             ordenes.append([row[0], row[3], row[6] - row[5]])
@@ -439,7 +461,7 @@ class Ordenes:
         input()
 
     def reabastecerArticulos(self, pendientes):
-        articuloID = int(input("Ingrese el identificador del articulo al cual se desea reabastecer: "))
+        articuloID = int(input("Ingrese el identificador del articulo al cual se desea reabastecer hasta el tope: "))
         cantidad = 0
         for pendiente in pendientes:
             if articuloID == pendiente[0]:
@@ -447,8 +469,6 @@ class Ordenes:
         listaFilas = ejecutarQuery(self.consultaActualizar % (cantidad, articuloID))
         print (listaFilas)
         input()
-        #imprimirListaFilas(listaFilas, self.encabezado)
-        #input()
 
     def mostrar(self):
         print("Ordenes por realizar:")

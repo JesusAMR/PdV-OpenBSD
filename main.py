@@ -7,7 +7,7 @@ while(x == True):
     Ordenes = query.Ordenes().mostrarOrdenes()
     if Ordenes:
         "Hay ordenes que realizar, favor de consultarlas"
-    print ("""Menú del proyecto
+    print ("""Menu del proyecto
         1.- Dar de alta
         2.- Hacer pedidos
         3.- Hacer consulta
